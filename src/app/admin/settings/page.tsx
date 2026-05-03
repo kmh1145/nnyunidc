@@ -39,14 +39,17 @@ export default function SettingsPage() {
   })
 
   React.useEffect(() => {
-    fetch("/api/admin/site-config").then(r => r.ok && r.json().then(d => setSiteForm({
-      siteTitle: d.siteTitle || "宁宁云IDC", tabTitle: d.tabTitle || "宁宁云IDC",
-      brandName: d.brandName || "宁宁云IDC", keywords: d.keywords || "",
-      description: d.description || "", footer: d.footer || "",
-      smtpHost: d.smtpHost || "", smtpPort: d.smtpPort?.toString() || "587",
-      smtpUser: d.smtpUser || "", smtpPass: d.smtpPass || "",
-      smtpFrom: d.smtpFrom || "", smtpSecure: d.smtpSecure || false,
-    })))
+    fetch("/api/admin/site-config").then(r => {
+      if (!r.ok) return
+      r.json().then(d => setSiteForm({
+        siteTitle: d.siteTitle || "宁宁云IDC", tabTitle: d.tabTitle || "宁宁云IDC",
+        brandName: d.brandName || "宁宁云IDC", keywords: d.keywords || "",
+        description: d.description || "", footer: d.footer || "",
+        smtpHost: d.smtpHost || "", smtpPort: d.smtpPort?.toString() || "587",
+        smtpUser: d.smtpUser || "", smtpPass: d.smtpPass || "",
+        smtpFrom: d.smtpFrom || "", smtpSecure: d.smtpSecure || false,
+      }))
+    })
   }, [])
 
   React.useEffect(() => {
