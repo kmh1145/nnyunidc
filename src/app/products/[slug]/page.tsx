@@ -25,6 +25,7 @@ interface Product {
     bandwidth: number
     ipCount: number
     osOptions: string[]
+    guarantees?: { title: string; description: string }[]
   } | null
   category: { id: string; name: string; slug: string }
 }
