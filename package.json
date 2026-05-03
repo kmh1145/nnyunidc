@@ -8,8 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:push": "prisma db push",
-    "db:init": "ts-node --compiler-options {\"module\":\"CommonJS\"} scripts/init-db.ts",
-    "db:setup": "prisma db push && ts-node --compiler-options {\"module\":\"CommonJS\"} scripts/init-db.ts",
+    "db:init": "node scripts/init-db.mjs",
+    "db:setup": "prisma db push && node scripts/init-db.mjs",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:reset": "prisma db push --force-reset && prisma db seed"
