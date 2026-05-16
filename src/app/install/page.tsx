@@ -12,6 +12,8 @@ export default function InstallPage() {
   const router = useRouter()
   const [step, setStep] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
+  const [testing, setTesting] = React.useState(false)
+  const [dbTested, setDbTested] = React.useState(false)
   const [error, setError] = React.useState("")
   const [progress, setProgress] = React.useState(0)
   const [installLogs, setInstallLogs] = React.useState<string[]>([])
@@ -41,7 +43,7 @@ export default function InstallPage() {
   })
 
   async function testDbConnection() {
-    setLoading(true)
+    setTesting(true)
     setError("")
     try {
       const r = await fetch("/api/install/test-db", {
@@ -52,22 +54,31 @@ export default function InstallPage() {
       if (!r.ok) {
         const d = await r.json()
         setError(d.error || "数据库连接失败")
+        setDbTested(false)
+        alert(d.error || "数据库连接失败，请检查配置后重试")
         return false
       }
+      setDbTested(true)
+      setError("")
+      alert("数据库连接成功！")
       return true
     } catch {
-      setError("数据库连接失败")
+      setError("数据库连接失败，请检查配置")
+      setDbTested(false)
+      alert("数据库连接失败，请检查配置后重试")
       return false
     } finally {
-      setLoading(false)
+      setTesting(false)
     }
   }
 
   async function handleNext() {
     if (step === 0) {
-      // 测试数据库连接
-      const ok = await testDbConnection()
-      if (!ok) return
+      if (!dbTested) {
+        alert("请先点击\"测试连接\"按钮验证数据库连接")
+        return
+      }
+      setDbTested(false)
     }
 
     if (step === 1) {
@@ -241,6 +252,12 @@ export default function InstallPage() {
                   <Label>密码</Label>
                   <Input type="password" value={db.password} onChange={e => setDb(d => ({ ...d, password: e.target.value }))} />
                 </div>
+              </div>
+              <div className="flex gap-2 items-center pt-2">
+                <Button type="button" variant="outline" onClick={testDbConnection} disabled={testing}>
+                  {testing ? "测试中..." : dbTested ? "✓ 重新测试" : "测试连接"}
+                </Button>
+                {dbTested && <span className="text-green-600 text-sm">✓ 数据库连接成功</span>}
               </div>
               {error && <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">{error}</div>}
             </div>
