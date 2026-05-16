@@ -52,6 +52,9 @@ prisma/dev.db-journal
 *.swo
 *~
 
+# install
+.install.lock
+
 # OS
 Thumbs.db
 
