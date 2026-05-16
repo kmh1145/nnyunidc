@@ -191,7 +191,7 @@ export default function NewProductPage() {
         <p className="text-muted-foreground">创建新的服务器产品</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form method="post" onSubmit={handleSubmit} className="space-y-6">
         {/* 基本信息 */}
         <Card>
           <CardHeader>

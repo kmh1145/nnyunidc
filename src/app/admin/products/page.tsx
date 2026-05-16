@@ -157,7 +157,7 @@ export default function AdminProductsPage() {
         <Card>
           <CardHeader><h3 className="font-semibold">添加分类</h3></CardHeader>
           <CardContent>
-            <form onSubmit={handleCategorySubmit} className="space-y-4">
+            <form method="post" onSubmit={handleCategorySubmit} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label>分类名称 *</Label>

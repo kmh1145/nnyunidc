@@ -68,7 +68,7 @@ export default function NewsPage() {
         <Card>
           <CardHeader><CardTitle>新闻分类</CardTitle></CardHeader>
           <CardContent>
-            <form onSubmit={handleCatSubmit} className="space-y-4 mb-4">
+            <form method="post" onSubmit={handleCatSubmit} className="space-y-4 mb-4">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2"><Label>名称 *</Label><Input value={catForm.name} onChange={e => setCatForm(f => ({ ...f, name: e.target.value, slug: e.target.value.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-") }))} required /></div>
                 <div className="space-y-2"><Label>标识 *</Label><Input value={catForm.slug} onChange={e => setCatForm(f => ({ ...f, slug: e.target.value }))} required /></div>
@@ -92,7 +92,7 @@ export default function NewsPage() {
 
           {(editing || form.title !== "" || articles.length === 0) && (
             <Card><CardHeader><CardTitle>{editing ? "编辑新闻" : "添加新闻"}</CardTitle></CardHeader>
-              <CardContent><form onSubmit={handleSubmit} className="space-y-4">
+              <CardContent><form method="post" onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2"><Label>标题 *</Label><Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value, slug: e.target.value.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-") }))} required /></div>
                   <div className="space-y-2"><Label>标识 *</Label><Input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} required /></div>

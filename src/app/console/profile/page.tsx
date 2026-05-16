@@ -115,7 +115,7 @@ export default function ProfilePage() {
           <CardDescription>更新您的个人信息</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleProfileUpdate} className="space-y-4">
+          <form method="post" onSubmit={handleProfileUpdate} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">昵称</Label>
@@ -166,7 +166,7 @@ export default function ProfilePage() {
           <CardDescription>更改您的登录密码</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handlePasswordChange} className="space-y-4">
+          <form method="post" onSubmit={handlePasswordChange} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currentPassword">当前密码</Label>
               <Input

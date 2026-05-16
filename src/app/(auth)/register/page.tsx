@@ -66,7 +66,7 @@ export default function RegisterPage() {
           输入您的信息创建新账户
         </CardDescription>
       </CardHeader>
-      <form onSubmit={onSubmit}>
+      <form method="post" onSubmit={onSubmit}>
         <CardContent className="space-y-4">
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">

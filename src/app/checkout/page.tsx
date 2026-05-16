@@ -96,7 +96,7 @@ export default function CheckoutPage() {
     <div className="container py-8 px-4 md:px-6">
       <h1 className="text-3xl font-bold mb-8">结算</h1>
 
-      <form onSubmit={onSubmit}>
+      <form method="post" onSubmit={onSubmit}>
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             <Card>

@@ -61,7 +61,7 @@ export default function ProfilePage() {
           <CardTitle>基本信息</CardTitle>
           <CardDescription>更新您的个人信息</CardDescription>
         </CardHeader>
-        <form onSubmit={onSubmit}>
+        <form method="post" onSubmit={onSubmit}>
           <CardContent className="space-y-4">
             {success && (
               <div className="text-sm text-green-600 bg-green-50 p-3 rounded-md">

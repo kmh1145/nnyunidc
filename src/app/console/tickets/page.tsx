@@ -230,7 +230,7 @@ export default function TicketsPage() {
             <CardDescription>请选择对应部门，描述您遇到的问题</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreateTicket} className="space-y-4">
+            <form method="post" onSubmit={handleCreateTicket} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="subject">主题</Label>

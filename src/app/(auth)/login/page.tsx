@@ -54,7 +54,7 @@ export default function LoginPage() {
           输入您的账户信息登录
         </CardDescription>
       </CardHeader>
-      <form onSubmit={onSubmit}>
+      <form method="post" onSubmit={onSubmit}>
         <CardContent className="space-y-4">
           {registered && (
             <div className="text-sm text-green-600 bg-green-50 p-3 rounded-md">

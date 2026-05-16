@@ -74,7 +74,7 @@ export default function EmailTemplatesPage() {
       {(editing || form.code) && (
         <Card>
           <CardHeader><CardTitle>{editing ? "编辑" : "添加"}邮件模板</CardTitle></CardHeader>
-          <CardContent><form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent><form method="post" onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2"><Label>模板名称</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required /></div>
               <div className="space-y-2"><Label>标识</Label><Input value={form.code} disabled placeholder="自动生成" /></div>

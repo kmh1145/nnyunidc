@@ -172,7 +172,7 @@ export default function EditProductPage() {
         <p className="text-muted-foreground">修改产品信息</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form method="post" onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader><CardTitle>基本信息</CardTitle></CardHeader>
           <CardContent className="space-y-4">

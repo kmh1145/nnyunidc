@@ -162,7 +162,7 @@ export default function PlatformsPage() {
             <CardTitle>{editingPlatform ? "编辑平台" : "添加平台"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form method="post" onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>平台类型</Label>

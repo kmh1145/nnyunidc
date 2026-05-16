@@ -158,7 +158,7 @@ export default function PaymentsPage() {
             <CardDescription>配置易支付 v1 接口参数，签名算法为 MD5</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form method="post" onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>显示名称</Label>
                 <Input

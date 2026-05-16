@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
           输入您的邮箱，我们将发送重置密码的链接
         </CardDescription>
       </CardHeader>
-      <form onSubmit={onSubmit}>
+      <form method="post" onSubmit={onSubmit}>
         <CardContent className="space-y-4">
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">

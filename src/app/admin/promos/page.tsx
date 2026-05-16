@@ -76,7 +76,7 @@ export default function PromosPage() {
         <Card>
           <CardHeader><CardTitle>{editing ? "编辑优惠码" : "添加优惠码"}</CardTitle></CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form method="post" onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2"><Label>优惠码 *</Label><Input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="SUMMER2024" required /></div>
                 <div className="space-y-2"><Label>类型</Label><select className="w-full rounded-md border px-3 py-2 text-sm" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>{Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>

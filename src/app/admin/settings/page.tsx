@@ -130,7 +130,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader><CardTitle>站点信息</CardTitle></CardHeader>
           <CardContent>
-            <form onSubmit={handleSiteSave} className="space-y-4">
+            <form method="post" onSubmit={handleSiteSave} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label>网站标题</Label>
@@ -187,7 +187,7 @@ export default function SettingsPage() {
 
           <Card>
             <CardContent>
-              <form onSubmit={handleDocSubmit} className="space-y-4 pt-6">
+              <form method="post" onSubmit={handleDocSubmit} className="space-y-4 pt-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label>标题 *</Label>
@@ -272,7 +272,7 @@ export default function SettingsPage() {
             <Card>
               <CardHeader><CardTitle>邮件设置</CardTitle></CardHeader>
               <CardContent>
-                <form onSubmit={e => { e.preventDefault(); handleSiteSave(e) }} className="space-y-4">
+                <form method="post" onSubmit={e => { e.preventDefault(); handleSiteSave(e) }} className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label>SMTP 服务器</Label>

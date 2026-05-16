@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
             请输入管理员账号登录
           </CardDescription>
         </CardHeader>
-        <form onSubmit={onSubmit}>
+        <form method="post" onSubmit={onSubmit}>
           <CardContent className="space-y-4">
             {error && (
               <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
