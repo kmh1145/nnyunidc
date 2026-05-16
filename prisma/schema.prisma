@@ -16,9 +16,12 @@ model User {
   password  String
   phone     String?
   role      Role     @default(USER)
+  balance   Decimal  @default(0)
+  credit    Decimal  @default(0)
   orders    Order[]
   servers   Server[]
   tickets   Ticket[]
+  promoUses PromoCodeUsage[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -240,5 +243,82 @@ model DocArticle {
   isPublished Boolean @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model PromoCode {
+  id           String            @id @default(cuid())
+  code         String            @unique
+  type         String            @default("percent")
+  value        Decimal
+  minAmount    Decimal           @default(0)
+  maxUseCount  Int               @default(0)
+  usedCount    Int               @default(0)
+  startsAt     DateTime?
+  expiresAt    DateTime?
+  isActive     Boolean           @default(true)
+  productIds   String            @default("")
+  description  String?
+  usages       PromoCodeUsage[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model PromoCodeUsage {
+  id         String    @id @default(cuid())
+  promoCodeId String
+  promoCode  PromoCode @relation(fields: [promoCodeId], references: [id])
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  orderId    String
+  discount   Decimal
+  createdAt  DateTime  @default(now())
+}
+
+model NewsCategory {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  sortOrder   Int      @default(0)
+  articles    NewsArticle[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model NewsArticle {
+  id          String       @id @default(cuid())
+  title       String
+  slug        String       @unique
+  content     String
+  summary     String?
+  categoryId  String
+  category    NewsCategory @relation(fields: [categoryId], references: [id])
+  isPublished Boolean      @default(true)
+  isTop       Boolean      @default(false)
+  viewCount   Int          @default(0)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  subject   String
+  content   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  type      String
+  action    String
+  content   String?
+  userId    String?
+  ip        String?
+  createdAt DateTime @default(now())
 }
 

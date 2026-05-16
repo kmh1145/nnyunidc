@@ -47,6 +47,26 @@ const sidebarNavItems = [
     icon: "💳",
   },
   {
+    title: "优惠码",
+    href: "/admin/promos",
+    icon: "🏷️",
+  },
+  {
+    title: "新闻管理",
+    href: "/admin/news",
+    icon: "📰",
+  },
+  {
+    title: "邮件模板",
+    href: "/admin/email-templates",
+    icon: "📧",
+  },
+  {
+    title: "系统日志",
+    href: "/admin/logs",
+    icon: "📜",
+  },
+  {
     title: "站务设置",
     href: "/admin/settings",
     icon: "⚙️",
