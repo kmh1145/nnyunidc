@@ -24,7 +24,7 @@ export default function InstallPage() {
     host: "localhost",
     port: "5432",
     name: "nnyunidc",
-    user: "zhurui",
+    user: "postgres",
     password: "",
   })
 
