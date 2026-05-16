@@ -7,11 +7,20 @@ const STEPS = ["数据库设置", "管理员设置", "站点信息", "正在安�
 function Btn({ children, variant = "default", disabled = false, className = "", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "default" | "outline" }) {
   const base = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-10 px-4 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
   const styles = variant === "outline" ? "border border-gray-300 bg-white hover:bg-gray-50 text-gray-700" : "bg-blue-600 text-white hover:bg-blue-700"
-  return <button className={`${base} ${styles} ${className}`} disabled={disabled} {...props}>{children}</button>
+  return <button type="button" className={`${base} ${styles} ${className}`} disabled={disabled} {...props}>{children}</button>
 }
 
-function Inp({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
+function Inp(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" {...props} />
+}
+
+async function readError(response: Response, fallback: string) {
+  try {
+    const data = await response.json()
+    return typeof data?.error === "string" ? data.error : fallback
+  } catch {
+    return fallback
+  }
 }
 
 export default function InstallPage() {
@@ -20,39 +29,78 @@ export default function InstallPage() {
   const [testing, setTesting] = React.useState(false)
   const [dbTested, setDbTested] = React.useState(false)
   const [error, setError] = React.useState("")
+  const [success, setSuccess] = React.useState("")
   const [progress, setProgress] = React.useState(0)
   const [installLogs, setInstallLogs] = React.useState<string[]>([])
-  const [result, setResult] = React.useState<any>(null)
-  const [siteUrl, setSiteUrl] = React.useState("")
+  const [siteUrl, setSiteUrl] = React.useState(() => typeof window === "undefined" ? "" : window.location.origin)
 
   const [db, setDb] = React.useState({ host: "localhost", port: "5432", name: "nnyunidc", user: "postgres", password: "" })
   const [admin, setAdmin] = React.useState({ name: "管理员", email: "", password: "", confirmPassword: "" })
   const [site, setSite] = React.useState({ title: "宁宁云IDC" })
 
-  React.useEffect(() => {
-    setSiteUrl(window.location.origin)
-  }, [])
+  function updateDb(patch: Partial<typeof db>) {
+    setDb(d => ({ ...d, ...patch }))
+    setDbTested(false)
+    setSuccess("")
+  }
 
   async function testDbConnection() {
     setTesting(true)
     setError("")
+    setSuccess("")
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000)
+
     try {
-      const r = await fetch("/api/install/test-db", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(db) })
-      if (!r.ok) { const d = await r.json(); setError(d.error || "连接失败"); setDbTested(false); alert(d.error || "连接失败"); return }
-      setDbTested(true); setError(""); alert("数据库连接成功！")
-    } catch { setError("连接失败"); setDbTested(false); alert("连接失败") }
-    finally { setTesting(false) }
+      const r = await fetch("/api/install/test-db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(db),
+        signal: controller.signal,
+      })
+
+      if (!r.ok) {
+        setError(await readError(r, "连接失败"))
+        setDbTested(false)
+        return
+      }
+
+      setDbTested(true)
+      setError("")
+      setSuccess("数据库连接成功，可以继续下一步。")
+    } catch (err) {
+      setError(err instanceof DOMException && err.name === "AbortError" ? "连接超时，请检查数据库地址和端口" : "连接失败")
+      setDbTested(false)
+    } finally {
+      window.clearTimeout(timeoutId)
+      setTesting(false)
+    }
   }
 
   async function handleNext() {
-    if (step === 0) { if (!dbTested) { alert("请先点击测试连接"); return } setDbTested(false) }
+    setError("")
+    setSuccess("")
+
+    if (step === 0) {
+      if (!dbTested) {
+        setError("请先点击测试连接，确认数据库可用后再继续。")
+        return
+      }
+    }
     if (step === 1) {
       if (!admin.email || !admin.password) { setError("请填写邮箱和密码"); return }
       if (admin.password !== admin.confirmPassword) { setError("两次密码不一致"); return }
       if (admin.password.length < 6) { setError("密码至少6位"); return }
     }
-    if (step === 2) { setStep(3); await runInstall(); return }
-    setError(""); setStep(step + 1)
+    if (step === 2) {
+      setLoading(true)
+      setStep(3)
+      await runInstall()
+      setLoading(false)
+      return
+    }
+
+    setStep(step + 1)
   }
 
   async function runInstall() {
@@ -62,22 +110,22 @@ export default function InstallPage() {
     setProgress(30); addLog("正在创建数据表...")
     try {
       const r1 = await fetch("/api/install/init-db", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ databaseUrl: connStr }) })
-      if (!r1.ok) { addLog("创建数据表失败"); return }
+      if (!r1.ok) { addLog(`创建数据表失败：${await readError(r1, "未知错误")}`); return }
       addLog("数据表创建成功")
     } catch (e) { addLog("失败: " + String(e)); return }
 
     setProgress(50); addLog("正在创建管理员...")
     try {
       const r2 = await fetch("/api/install/create-admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ databaseUrl: connStr, name: admin.name, email: admin.email, password: admin.password, siteTitle: site.title, siteUrl }) })
-      if (!r2.ok) { addLog("创建管理员失败"); return }
-      setResult(await r2.json()); addLog("管理员创建成功")
+      if (!r2.ok) { addLog(`创建管理员失败：${await readError(r2, "未知错误")}`); return }
+      await r2.json(); addLog("管理员创建成功")
     } catch (e) { addLog("失败: " + String(e)); return }
 
     setProgress(80); addLog("正在写入配置...")
     try {
       const secret = Array.from({ length: 32 }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]).join("")
       const r3 = await fetch("/api/install/write-config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ databaseUrl: connStr, nextauthSecret: secret, nextauthUrl: siteUrl, appUrl: siteUrl }) })
-      if (!r3.ok) { addLog("写入配置失败"); return }
+      if (!r3.ok) { addLog(`写入配置失败：${await readError(r3, "未知错误")}`); return }
       addLog("配置写入成功")
     } catch (e) { addLog("失败: " + String(e)); return }
 
@@ -113,18 +161,19 @@ export default function InstallPage() {
             <h2 className="text-xl font-bold mb-6">🗄️ 数据库设置</h2>
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-1"><label className="text-sm font-medium">数据库主机</label><Inp value={db.host} onChange={e => setDb(d => ({ ...d, host: e.target.value }))} /></div>
-                <div className="space-y-1"><label className="text-sm font-medium">端口</label><Inp value={db.port} onChange={e => setDb(d => ({ ...d, port: e.target.value }))} /></div>
+                <div className="space-y-1"><label className="text-sm font-medium">数据库主机</label><Inp value={db.host} onChange={e => updateDb({ host: e.target.value })} /></div>
+                <div className="space-y-1"><label className="text-sm font-medium">端口</label><Inp value={db.port} onChange={e => updateDb({ port: e.target.value })} /></div>
               </div>
-              <div className="space-y-1"><label className="text-sm font-medium">数据库名</label><Inp value={db.name} onChange={e => setDb(d => ({ ...d, name: e.target.value }))} /></div>
+              <div className="space-y-1"><label className="text-sm font-medium">数据库名</label><Inp value={db.name} onChange={e => updateDb({ name: e.target.value })} /></div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-1"><label className="text-sm font-medium">用户名</label><Inp value={db.user} onChange={e => setDb(d => ({ ...d, user: e.target.value }))} /></div>
-                <div className="space-y-1"><label className="text-sm font-medium">密码</label><Inp type="password" value={db.password} onChange={e => setDb(d => ({ ...d, password: e.target.value }))} /></div>
+                <div className="space-y-1"><label className="text-sm font-medium">用户名</label><Inp value={db.user} onChange={e => updateDb({ user: e.target.value })} /></div>
+                <div className="space-y-1"><label className="text-sm font-medium">密码</label><Inp type="password" value={db.password} onChange={e => updateDb({ password: e.target.value })} /></div>
               </div>
               <div className="flex gap-2 items-center pt-2">
                 <Btn variant="outline" onClick={testDbConnection} disabled={testing}>{testing ? "测试中..." : dbTested ? "✓ 重新测试" : "测试连接"}</Btn>
                 {dbTested && <span className="text-green-600 text-sm">✓ 连接成功</span>}
               </div>
+              {success && <div className="bg-green-50 text-green-700 p-3 rounded-md text-sm">{success}</div>}
               {error && <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">{error}</div>}
             </div>
           </div>

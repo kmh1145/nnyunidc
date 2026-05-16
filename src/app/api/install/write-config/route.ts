@@ -2,6 +2,12 @@ import { NextResponse } from "next/server"
 import fs from "fs"
 import path from "path"
 
+export const runtime = "nodejs"
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "未知错误"
+}
+
 export async function POST(request: Request) {
   try {
     const { databaseUrl, nextauthSecret, nextauthUrl, appUrl } = await request.json()
@@ -38,7 +44,7 @@ NEXT_PUBLIC_APP_URL="${appUrl}"
     fs.writeFileSync(lockPath, new Date().toISOString())
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }

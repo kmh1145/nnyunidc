@@ -3,6 +3,12 @@ import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import pg from "pg"
 
+export const runtime = "nodejs"
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "未知错误"
+}
+
 export async function POST(request: Request) {
   try {
     const { databaseUrl } = await request.json()
@@ -108,7 +114,7 @@ export async function POST(request: Request) {
     await prisma.$disconnect()
     await pool.end()
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }

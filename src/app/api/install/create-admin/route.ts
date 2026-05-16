@@ -4,6 +4,12 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import pg from "pg"
 import bcrypt from "bcryptjs"
 
+export const runtime = "nodejs"
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "未知错误"
+}
+
 export async function POST(request: Request) {
   try {
     const { databaseUrl, name, email, password, siteTitle, siteUrl } = await request.json()
@@ -57,7 +63,7 @@ export async function POST(request: Request) {
       adminPassword: password,
       loginUrl: `${siteUrl}/admin/login`,
     })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }
