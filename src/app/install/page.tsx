@@ -15,7 +15,6 @@ function Inp({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & 
 }
 
 export default function InstallPage() {
-  const [mounted, setMounted] = React.useState(false)
   const [step, setStep] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
   const [testing, setTesting] = React.useState(false)
@@ -32,7 +31,6 @@ export default function InstallPage() {
 
   React.useEffect(() => {
     setSiteUrl(window.location.origin)
-    setMounted(true)
   }, [])
 
   async function testDbConnection() {
@@ -87,8 +85,6 @@ export default function InstallPage() {
   }
 
   function addLog(msg: string) { setInstallLogs(p => [...p, msg]) }
-
-  if (!mounted) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-500">加载中...</p></div>
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
