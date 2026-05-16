@@ -3,13 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
-// 获取所有分类
+// 获取所有分类（公开接口，产品页面需要）
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session || (session.user as any)?.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   try {
     const categories = await prisma.category.findMany({
       include: { _count: { select: { products: true } } },
