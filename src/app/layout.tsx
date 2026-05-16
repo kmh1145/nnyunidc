@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import { AppShell } from "@/components/layout/app-shell";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { CartProvider } from "@/lib/cart-context";
 
@@ -34,9 +33,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SessionProvider>
           <CartProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
+            <AppShell>{children}</AppShell>
           </CartProvider>
         </SessionProvider>
       </body>
