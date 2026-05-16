@@ -1,15 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
 const STEPS = ["数据库设置", "管理员设置", "站点信息", "正在安装", "完成安装"]
 
+function Btn({ children, variant = "default", disabled = false, className = "", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "default" | "outline" }) {
+  const base = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-10 px-4 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+  const styles = variant === "outline" ? "border border-gray-300 bg-white hover:bg-gray-50 text-gray-700" : "bg-blue-600 text-white hover:bg-blue-700"
+  return <button className={`${base} ${styles} ${className}`} disabled={disabled} {...props}>{children}</button>
+}
+
+function Inp({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label?: string }) {
+  return <input className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" {...props} />
+}
+
 export default function InstallPage() {
-  const router = useRouter()
+  const [mounted, setMounted] = React.useState(false)
   const [step, setStep] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
   const [testing, setTesting] = React.useState(false)
@@ -18,364 +24,180 @@ export default function InstallPage() {
   const [progress, setProgress] = React.useState(0)
   const [installLogs, setInstallLogs] = React.useState<string[]>([])
   const [result, setResult] = React.useState<any>(null)
+  const [siteUrl, setSiteUrl] = React.useState("")
 
-  // 数据库配置
-  const [db, setDb] = React.useState({
-    host: "localhost",
-    port: "5432",
-    name: "nnyunidc",
-    user: "postgres",
-    password: "",
-  })
+  const [db, setDb] = React.useState({ host: "localhost", port: "5432", name: "nnyunidc", user: "postgres", password: "" })
+  const [admin, setAdmin] = React.useState({ name: "管理员", email: "", password: "", confirmPassword: "" })
+  const [site, setSite] = React.useState({ title: "宁宁云IDC" })
 
-  // 管理员
-  const [admin, setAdmin] = React.useState({
-    name: "管理员",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  })
-
-  // 站点
-  const [site, setSite] = React.useState({
-    title: "宁宁云IDC",
-    url: typeof window !== "undefined" ? window.location.origin : "",
-  })
+  React.useEffect(() => {
+    setSiteUrl(window.location.origin)
+    setMounted(true)
+  }, [])
 
   async function testDbConnection() {
     setTesting(true)
     setError("")
     try {
-      const r = await fetch("/api/install/test-db", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(db),
-      })
-      if (!r.ok) {
-        const d = await r.json()
-        setError(d.error || "数据库连接失败")
-        setDbTested(false)
-        alert(d.error || "数据库连接失败，请检查配置后重试")
-        return false
-      }
-      setDbTested(true)
-      setError("")
-      alert("数据库连接成功！")
-      return true
-    } catch {
-      setError("数据库连接失败，请检查配置")
-      setDbTested(false)
-      alert("数据库连接失败，请检查配置后重试")
-      return false
-    } finally {
-      setTesting(false)
-    }
+      const r = await fetch("/api/install/test-db", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(db) })
+      if (!r.ok) { const d = await r.json(); setError(d.error || "连接失败"); setDbTested(false); alert(d.error || "连接失败"); return }
+      setDbTested(true); setError(""); alert("数据库连接成功！")
+    } catch { setError("连接失败"); setDbTested(false); alert("连接失败") }
+    finally { setTesting(false) }
   }
 
   async function handleNext() {
-    if (step === 0) {
-      if (!dbTested) {
-        alert("请先点击\"测试连接\"按钮验证数据库连接")
-        return
-      }
-      setDbTested(false)
-    }
-
+    if (step === 0) { if (!dbTested) { alert("请先点击测试连接"); return } setDbTested(false) }
     if (step === 1) {
-      if (!admin.email || !admin.password) {
-        setError("请填写管理员邮箱和密码")
-        return
-      }
-      if (admin.password !== admin.confirmPassword) {
-        setError("两次输入的密码不一致")
-        return
-      }
-      if (admin.password.length < 6) {
-        setError("密码长度不能少于6位")
-        return
-      }
+      if (!admin.email || !admin.password) { setError("请填写邮箱和密码"); return }
+      if (admin.password !== admin.confirmPassword) { setError("两次密码不一致"); return }
+      if (admin.password.length < 6) { setError("密码至少6位"); return }
     }
-
-    if (step === 2) {
-      // 开始安装
-      setStep(3)
-      await runInstall()
-      return
-    }
-
-    setError("")
-    setStep(step + 1)
+    if (step === 2) { setStep(3); await runInstall(); return }
+    setError(""); setStep(step + 1)
   }
 
   async function runInstall() {
-    setProgress(10)
-    addLog("正在测试数据库连接...")
-
+    setProgress(10); addLog("正在连接数据库...")
     const connStr = `postgresql://${db.user}:${encodeURIComponent(db.password)}@${db.host}:${db.port}/${db.name}`
 
-    // Step 1: Init DB
-    addLog("正在创建数据库表结构...")
-    setProgress(30)
+    setProgress(30); addLog("正在创建数据表...")
     try {
-      const r1 = await fetch("/api/install/init-db", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ databaseUrl: connStr }),
-      })
-      if (!r1.ok) {
-        addLog("创建数据表失败")
-        return
-      }
+      const r1 = await fetch("/api/install/init-db", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ databaseUrl: connStr }) })
+      if (!r1.ok) { addLog("创建数据表失败"); return }
       addLog("数据表创建成功")
-    } catch (e) {
-      addLog("创建数据表失败: " + String(e))
-      return
-    }
+    } catch (e) { addLog("失败: " + String(e)); return }
 
-    // Step 2: Create admin
-    setProgress(50)
-    addLog("正在创建管理员账号...")
+    setProgress(50); addLog("正在创建管理员...")
     try {
-      const r2 = await fetch("/api/install/create-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          databaseUrl: connStr,
-          name: admin.name,
-          email: admin.email,
-          password: admin.password,
-          siteTitle: site.title,
-          siteUrl: site.url,
-        }),
-      })
-      if (!r2.ok) {
-        addLog("创建管理员失败")
-        return
-      }
-      const data = await r2.json()
-      setResult(data)
-      addLog("管理员账号创建成功")
-    } catch (e) {
-      addLog("创建管理员失败: " + String(e))
-      return
-    }
+      const r2 = await fetch("/api/install/create-admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ databaseUrl: connStr, name: admin.name, email: admin.email, password: admin.password, siteTitle: site.title, siteUrl }) })
+      if (!r2.ok) { addLog("创建管理员失败"); return }
+      setResult(await r2.json()); addLog("管理员创建成功")
+    } catch (e) { addLog("失败: " + String(e)); return }
 
-    // Step 3: Write config
-    setProgress(80)
-    addLog("正在写入配置文件...")
+    setProgress(80); addLog("正在写入配置...")
     try {
-      const r3 = await fetch("/api/install/write-config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          databaseUrl: connStr,
-          nextauthSecret: generateSecret(),
-          nextauthUrl: site.url,
-          appUrl: site.url,
-        }),
-      })
-      if (!r3.ok) {
-        addLog("写入配置文件失败")
-        return
-      }
-      addLog("配置文件写入成功")
-    } catch (e) {
-      addLog("写入配置文件失败: " + String(e))
-      return
-    }
+      const secret = Array.from({ length: 32 }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]).join("")
+      const r3 = await fetch("/api/install/write-config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ databaseUrl: connStr, nextauthSecret: secret, nextauthUrl: siteUrl, appUrl: siteUrl }) })
+      if (!r3.ok) { addLog("写入配置失败"); return }
+      addLog("配置写入成功")
+    } catch (e) { addLog("失败: " + String(e)); return }
 
-    setProgress(100)
-    addLog("安装完成！")
-    setStep(4)
+    setProgress(100); addLog("安装完成！"); setStep(4)
   }
 
-  function addLog(msg: string) {
-    setInstallLogs(prev => [...prev, msg])
-  }
+  function addLog(msg: string) { setInstallLogs(p => [...p, msg]) }
 
-  function generateSecret() {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    let s = ""
-    for (let i = 0; i < 32; i++) s += chars.charAt(Math.floor(Math.random() * chars.length))
-    return s
-  }
+  if (!mounted) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-500">加载中...</p></div>
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
       <div className="max-w-2xl w-full">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">宁宁云IDC 安装向导</h1>
-          <p className="text-muted-foreground">感谢选择宁宁云IDC服务器销售系统</p>
+          <p className="text-gray-500">感谢选择宁宁云IDC服务器销售系统</p>
         </div>
 
-        {/* Steps indicator */}
         {step < 4 && (
           <div className="flex items-center justify-center mb-8 gap-0">
             {STEPS.slice(0, 3).map((s, i) => {
-              const isActive = i === step
-              const isDone = i < step
-              return (
-                <React.Fragment key={i}>
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${isActive ? "bg-primary text-primary-foreground font-bold" : isDone ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border-2 ${isActive ? "border-primary-foreground" : isDone ? "border-green-700" : "border-gray-400"}`}>{isDone ? "✓" : i + 1}</span>
-                    {s}
-                  </div>
-                  {i < 2 && <div className="w-12 h-px bg-gray-300 mx-1" />}
-                </React.Fragment>
-              )
+              const isActive = i === step; const isDone = i < step
+              return <React.Fragment key={i}>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${isActive ? "bg-blue-600 text-white font-bold" : isDone ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border-2 ${isActive ? "border-white" : isDone ? "border-green-700" : "border-gray-400"}`}>{isDone ? "✓" : i + 1}</span>{s}
+                </div>
+                {i < 2 && <div className="w-12 h-px bg-gray-300 mx-1" />}
+              </React.Fragment>
             })}
           </div>
         )}
 
-        {/* Step 0: Database */}
         {step === 0 && (
           <div className="bg-white rounded-lg shadow p-8">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">🗄️ 数据库设置</h2>
+            <h2 className="text-xl font-bold mb-6">🗄️ 数据库设置</h2>
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>数据库主机</Label>
-                  <Input value={db.host} onChange={e => setDb(d => ({ ...d, host: e.target.value }))} />
-                </div>
-                <div className="space-y-2">
-                  <Label>端口</Label>
-                  <Input value={db.port} onChange={e => setDb(d => ({ ...d, port: e.target.value }))} />
-                </div>
+                <div className="space-y-1"><label className="text-sm font-medium">数据库主机</label><Inp value={db.host} onChange={e => setDb(d => ({ ...d, host: e.target.value }))} /></div>
+                <div className="space-y-1"><label className="text-sm font-medium">端口</label><Inp value={db.port} onChange={e => setDb(d => ({ ...d, port: e.target.value }))} /></div>
               </div>
-              <div className="space-y-2">
-                <Label>数据库名</Label>
-                <Input value={db.name} onChange={e => setDb(d => ({ ...d, name: e.target.value }))} />
-              </div>
+              <div className="space-y-1"><label className="text-sm font-medium">数据库名</label><Inp value={db.name} onChange={e => setDb(d => ({ ...d, name: e.target.value }))} /></div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>用户名</Label>
-                  <Input value={db.user} onChange={e => setDb(d => ({ ...d, user: e.target.value }))} />
-                </div>
-                <div className="space-y-2">
-                  <Label>密码</Label>
-                  <Input type="password" value={db.password} onChange={e => setDb(d => ({ ...d, password: e.target.value }))} />
-                </div>
+                <div className="space-y-1"><label className="text-sm font-medium">用户名</label><Inp value={db.user} onChange={e => setDb(d => ({ ...d, user: e.target.value }))} /></div>
+                <div className="space-y-1"><label className="text-sm font-medium">密码</label><Inp type="password" value={db.password} onChange={e => setDb(d => ({ ...d, password: e.target.value }))} /></div>
               </div>
               <div className="flex gap-2 items-center pt-2">
-                <Button type="button" variant="outline" onClick={testDbConnection} disabled={testing}>
-                  {testing ? "测试中..." : dbTested ? "✓ 重新测试" : "测试连接"}
-                </Button>
-                {dbTested && <span className="text-green-600 text-sm">✓ 数据库连接成功</span>}
+                <Btn variant="outline" onClick={testDbConnection} disabled={testing}>{testing ? "测试中..." : dbTested ? "✓ 重新测试" : "测试连接"}</Btn>
+                {dbTested && <span className="text-green-600 text-sm">✓ 连接成功</span>}
               </div>
               {error && <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">{error}</div>}
             </div>
           </div>
         )}
 
-        {/* Step 1: Admin */}
         {step === 1 && (
           <div className="bg-white rounded-lg shadow p-8">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">👤 管理员设置</h2>
+            <h2 className="text-xl font-bold mb-6">👤 管理员设置</h2>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>管理员昵称</Label>
-                <Input value={admin.name} onChange={e => setAdmin(a => ({ ...a, name: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>管理员邮箱 *</Label>
-                <Input type="email" value={admin.email} onChange={e => setAdmin(a => ({ ...a, email: e.target.value }))} placeholder="admin@example.com" />
-              </div>
+              <div className="space-y-1"><label className="text-sm font-medium">昵称</label><Inp value={admin.name} onChange={e => setAdmin(a => ({ ...a, name: e.target.value }))} /></div>
+              <div className="space-y-1"><label className="text-sm font-medium">邮箱 *</label><Inp type="email" value={admin.email} onChange={e => setAdmin(a => ({ ...a, email: e.target.value }))} placeholder="admin@example.com" /></div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>密码 *</Label>
-                  <Input type="password" value={admin.password} onChange={e => setAdmin(a => ({ ...a, password: e.target.value }))} placeholder="至少6位" />
-                </div>
-                <div className="space-y-2">
-                  <Label>确认密码 *</Label>
-                  <Input type="password" value={admin.confirmPassword} onChange={e => setAdmin(a => ({ ...a, confirmPassword: e.target.value }))} placeholder="再次输入密码" />
-                </div>
+                <div className="space-y-1"><label className="text-sm font-medium">密码 *</label><Inp type="password" value={admin.password} onChange={e => setAdmin(a => ({ ...a, password: e.target.value }))} placeholder="至少6位" /></div>
+                <div className="space-y-1"><label className="text-sm font-medium">确认密码 *</label><Inp type="password" value={admin.confirmPassword} onChange={e => setAdmin(a => ({ ...a, confirmPassword: e.target.value }))} placeholder="再次输入" /></div>
               </div>
               {error && <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">{error}</div>}
             </div>
           </div>
         )}
 
-        {/* Step 2: Site */}
         {step === 2 && (
           <div className="bg-white rounded-lg shadow p-8">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">🌐 站点信息</h2>
+            <h2 className="text-xl font-bold mb-6">🌐 站点信息</h2>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>站点标题</Label>
-                <Input value={site.title} onChange={e => setSite(s => ({ ...s, title: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>站点地址</Label>
-                <Input value={site.url} onChange={e => setSite(s => ({ ...s, url: e.target.value }))} placeholder="https://your-domain.com" />
-              </div>
+              <div className="space-y-1"><label className="text-sm font-medium">站点标题</label><Inp value={site.title} onChange={e => setSite(s => ({ ...s, title: e.target.value }))} /></div>
+              <div className="space-y-1"><label className="text-sm font-medium">站点地址</label><Inp value={siteUrl} onChange={e => setSiteUrl(e.target.value)} placeholder="https://your-domain.com" /></div>
             </div>
           </div>
         )}
 
-        {/* Step 3: Installing */}
         {step === 3 && (
           <div className="bg-white rounded-lg shadow p-8">
             <h2 className="text-xl font-bold mb-6">⏳ 正在安装...</h2>
-            <div className="space-y-4">
-              <div className="w-full bg-gray-200 rounded-full h-4">
-                <div className="bg-primary h-4 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-              </div>
-              <div className="space-y-1 max-h-64 overflow-y-auto bg-gray-50 rounded p-4">
-                {installLogs.map((log, i) => (
-                  <div key={i} className="text-sm font-mono text-muted-foreground">{log}</div>
-                ))}
-              </div>
-            </div>
+            <div className="w-full bg-gray-200 rounded-full h-4 mb-4"><div className="bg-blue-600 h-4 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} /></div>
+            <div className="space-y-1 max-h-64 overflow-y-auto bg-gray-50 rounded p-4">{installLogs.map((log, i) => <div key={i} className="text-sm font-mono text-gray-500">{log}</div>)}</div>
           </div>
         )}
 
-        {/* Step 4: Complete */}
         {step === 4 && (
-          <div className="bg-white rounded-lg shadow p-8">
-            <div className="text-center">
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-2xl font-bold mb-2">安装完成！</h2>
-              <p className="text-muted-foreground mb-6">宁宁云IDC 已成功安装</p>
-
-              <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left space-y-2">
-                <h3 className="font-semibold mb-2">登录信息</h3>
-                <div className="flex justify-between"><span className="text-muted-foreground">管理后台</span><span className="font-mono">{site.url}/admin/login</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">管理员邮箱</span><span className="font-mono">{admin.email}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">管理员密码</span><span className="font-mono">{admin.password}</span></div>
-              </div>
-
-              <div className="bg-orange-50 text-orange-700 p-4 rounded-md text-sm mb-6 text-left">
-                <strong>⚠️ 安全提示：</strong>
-                <ul className="list-disc pl-4 mt-2 space-y-1">
-                  <li>请删除 /install 页面文件防止重复安装</li>
-                  <li>登录后请立即修改管理员密码</li>
-                  <li>在管理后台完善支付设置和邮件配置</li>
-                </ul>
-              </div>
-
-              <Button size="lg" onClick={() => router.push("/admin/login")}>
-                前往管理后台
-              </Button>
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold mb-2">安装完成！</h2>
+            <p className="text-gray-500 mb-6">宁宁云IDC 已成功安装</p>
+            <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left space-y-2">
+              <h3 className="font-semibold mb-2">登录信息</h3>
+              <div className="flex justify-between"><span className="text-gray-500">管理后台</span><span className="font-mono">{siteUrl}/admin/login</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">管理员邮箱</span><span className="font-mono">{admin.email}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">管理员密码</span><span className="font-mono">{admin.password}</span></div>
             </div>
+            <div className="bg-orange-50 text-orange-700 p-4 rounded-md text-sm mb-6 text-left">
+              <strong>⚠️ 安全提示：</strong>
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                <li>请删除 src/app/install 目录防止重复安装</li>
+                <li>登录后请立即修改管理员密码</li>
+                <li>在管理后台完善支付设置和邮件配置</li>
+              </ul>
+            </div>
+            <Btn onClick={() => window.location.href = "/admin/login"}>前往管理后台</Btn>
           </div>
         )}
 
-        {/* Navigation buttons */}
         {step < 3 && (
           <div className="flex justify-between mt-6">
-            <Button variant="outline" disabled={step === 0} onClick={() => setStep(step - 1)}>
-              上一步
-            </Button>
-            <Button onClick={handleNext} disabled={loading}>
-              {loading ? "检测中..." : step === 2 ? "开始安装" : "下一步"}
-            </Button>
+            <Btn variant="outline" disabled={step === 0} onClick={() => setStep(step - 1)}>上一步</Btn>
+            <Btn onClick={handleNext} disabled={loading}>{loading ? "检测中..." : step === 2 ? "开始安装" : "下一步"}</Btn>
           </div>
         )}
 
-        <div className="text-center text-xs text-muted-foreground mt-8">
-          宁宁云IDC · 开源的VPS/服务器自动销售平台
-        </div>
+        <div className="text-center text-xs text-gray-400 mt-8">宁宁云IDC · 开源的VPS/服务器自动销售平台</div>
       </div>
     </div>
   )
