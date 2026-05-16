@@ -24,7 +24,7 @@ export default function InstallPage() {
     host: "localhost",
     port: "5432",
     name: "nnyunidc",
-    user: "postgres",
+    user: "zhurui",
     password: "",
   })
 
@@ -212,15 +212,19 @@ export default function InstallPage() {
         {/* Steps indicator */}
         {step < 4 && (
           <div className="flex items-center justify-center mb-8 gap-0">
-            {STEPS.slice(0, 3).map((s, i) => (
-              <React.Fragment key={i}>
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${i === step ? "bg-primary text-primary-foreground font-bold" : i < step ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs border-2 ${i === step ? 'border-primary-foreground' : i < step ? 'border-green-700' : 'border-gray-400'}">{i < step ? "✓" : i + 1}</span>
-                  {s}
-                </div>
-                {i < 2 && <div className="w-12 h-px bg-gray-300 mx-1" />}
-              </React.Fragment>
-            ))}
+            {STEPS.slice(0, 3).map((s, i) => {
+              const isActive = i === step
+              const isDone = i < step
+              return (
+                <React.Fragment key={i}>
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${isActive ? "bg-primary text-primary-foreground font-bold" : isDone ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border-2 ${isActive ? "border-primary-foreground" : isDone ? "border-green-700" : "border-gray-400"}`}>{isDone ? "✓" : i + 1}</span>
+                    {s}
+                  </div>
+                  {i < 2 && <div className="w-12 h-px bg-gray-300 mx-1" />}
+                </React.Fragment>
+              )
+            })}
           </div>
         )}
 
